@@ -17,7 +17,6 @@ package org.codehaus.mojo.xml.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +38,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.codehaus.mojo.xml.AbstractXmlMojo;
-import org.codehaus.mojo.xml.TransformMojo;
 import org.codehaus.plexus.component.configurator.ComponentConfigurationException;
 import org.codehaus.plexus.component.configurator.ComponentConfigurator;
 import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator;
@@ -80,7 +78,7 @@ public abstract class AbstractXmlMojoTestCase
         DefaultResourceManager rm = new DefaultResourceManager();
         setVariableValueToObject( rm, "logger", log );
         setVariableValueToObject( vm, "locator", rm );
-        final Map<String, ResourceLoader> resourceLoaders = new HashMap<String, ResourceLoader>();
+        final Map<String, ResourceLoader> resourceLoaders = new HashMap<>();
         resourceLoaders.put( "file", new FileResourceLoader() );
         resourceLoaders.put( "jar", new JarResourceLoader() );
         resourceLoaders.put( "classloader", new ThreadContextClasspathResourceLoader() );
@@ -115,23 +113,6 @@ public abstract class AbstractXmlMojoTestCase
         return dbf.newDocumentBuilder().parse( pFile );
     }
 
-    protected boolean java1_6_Aware()
-        throws IllegalAccessException, InvocationTargetException
-    {
-        try
-        {
-            TransformMojo.newTransformerFactory( "net.sf.saxon.TransformerFactoryImpl",
-                                                 Thread.currentThread().getContextClassLoader() );
-            return true;
-        }
-        catch ( NoSuchMethodException e )
-        {
-            return false;
-        }
-    }
-    
-    
-    
     @Override   //In maven-plugin-testing-harnes 2.1, this method had a simple error in it which resulted in
                 //the configuration being incorrectly generated.  In later versions, the error has been corrected.
                 //The error is annotated in the comments below.  This method should be removed when upgrading to later

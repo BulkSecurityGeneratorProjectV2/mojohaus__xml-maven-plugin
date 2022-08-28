@@ -23,14 +23,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.transform.Source;
@@ -77,8 +75,7 @@ public class TransformMojo
     private boolean forceCreation;
 
     /**
-     * Transformer factory use. By default, the systems default transformer factory is used. <b>If you use this feature
-     * you must use at least jdk 1.6</b>
+     * Transformer factory use. By default, the systems default transformer factory is used.
      */
     @Parameter( property = "xml.transformerFactory" )
     private String transformerFactory;
@@ -86,36 +83,13 @@ public class TransformMojo
     private void setFeature( TransformerFactory pTransformerFactory, String name, Boolean value )
         throws MojoExecutionException
     {
-        // Try to use the method setFeature, which isn't available until JAXP 1.3
-        Method m;
         try
         {
-            m = pTransformerFactory.getClass().getMethod( "setFeature", new Class[] { String.class, boolean.class } );
+            pTransformerFactory.setFeature( name, value );
         }
-        catch ( NoSuchMethodException e )
+        catch ( TransformerConfigurationException e )
         {
-            m = null;
-        }
-        if ( m == null )
-        {
-            // Not available, try to use setAttribute
-            pTransformerFactory.setAttribute( name, value );
-        }
-        else
-        {
-            try
-            {
-                m.invoke( pTransformerFactory, new Object[] { name, value } );
-            }
-            catch ( IllegalAccessException e )
-            {
-                throw new MojoExecutionException( e.getMessage(), e );
-            }
-            catch ( InvocationTargetException e )
-            {
-                Throwable t = e.getTargetException();
-                throw new MojoExecutionException( t.getMessage(), t );
-            }
+            throw new MojoExecutionException( e.getMessage(), e );
         }
     }
 
@@ -131,9 +105,8 @@ public class TransformMojo
         NameValuePair[] features = transformationSet.getFeatures();
         if ( features != null )
         {
-            for ( int i = 0; i < features.length; i++ )
+            for ( final NameValuePair feature : features )
             {
-                final NameValuePair feature = features[i];
                 final String name = feature.getName();
                 if ( name == null || name.length() == 0 )
                 {
@@ -150,9 +123,8 @@ public class TransformMojo
         NameValuePair[] attributes = transformationSet.getAttributes();
         if ( attributes != null )
         {
-            for ( int i = 0; i < attributes.length; i++ )
+            for ( final NameValuePair attribute : attributes )
             {
-                final NameValuePair attribute = attributes[i];
                 final String name = attribute.getName();
                 if ( name == null || name.length() == 0 )
                 {
@@ -180,45 +152,15 @@ public class TransformMojo
      * Creates a new instance of {@link TransformerFactory}.
      */
     private TransformerFactory getTransformerFactory()
-        throws MojoFailureException, MojoExecutionException
     {
         if ( transformerFactory == null )
         {
             return TransformerFactory.newInstance();
         }
-
-        try
-        {
-            return newTransformerFactory( transformerFactory, Thread.currentThread().getContextClassLoader() );
-        }
-        catch ( NoSuchMethodException exception )
-        {
-            throw new MojoFailureException( "JDK6 required when using transformerFactory parameter" );
-        }
-        catch ( IllegalAccessException exception )
-        {
-            throw new MojoExecutionException( "Cannot instantiate transformer factory", exception );
-        }
-        catch ( InvocationTargetException exception )
-        {
-            throw new MojoExecutionException( "Cannot instantiate transformer factory", exception );
-        }
+        return TransformerFactory.newInstance( transformerFactory, Thread.currentThread().getContextClassLoader() );
     }
 
     // public for use by unit test
-    public static TransformerFactory newTransformerFactory( String factoryClassName, ClassLoader classLoader )
-        throws NoSuchMethodException, IllegalAccessException, InvocationTargetException
-    {
-        // use reflection to avoid JAXP 1.4 (and hence JDK6) requirement
-
-        Class<?>[] methodTypes = new Class[] { String.class, ClassLoader.class };
-
-        Method method = TransformerFactory.class.getDeclaredMethod( "newInstance", methodTypes );
-
-        Object[] methodArgs = new Object[] { factoryClassName, classLoader };
-
-        return (TransformerFactory) method.invoke( null, methodArgs );
-    }
 
     private File getFile( File pDir, String pFile )
     {
@@ -241,9 +183,8 @@ public class TransformMojo
     private void addToClasspath( File pOutputDir )
     {
         MavenProject project = getProject();
-        for ( Iterator<Resource> iter = project.getResources().iterator(); iter.hasNext(); )
+        for ( Resource resource : project.getResources() )
         {
-            Resource resource = iter.next();
             if ( resource.getDirectory().equals( pOutputDir ) )
             {
                 return;
@@ -274,10 +215,10 @@ public class TransformMojo
 
     private static String getAllExMsgs( Throwable ex, boolean includeExName )
     {
-        StringBuffer sb = new StringBuffer( ( includeExName ? ex.toString() : ex.getLocalizedMessage() ) );
+        StringBuilder sb = new StringBuilder( ( includeExName ? ex.toString() : ex.getLocalizedMessage() ) );
         while ( ( ex = ex.getCause() ) != null )
         {
-            sb.append( "\nCaused by: " + ex.toString() );
+            sb.append( "\nCaused by: " ).append( ex );
         }
 
         return sb.toString();
@@ -291,10 +232,8 @@ public class TransformMojo
     protected long findLastModified( List<?> files, boolean oldest )
     {
         long timeStamp = ( oldest ? Long.MIN_VALUE : Long.MAX_VALUE );
-        for ( Iterator<?> it = files.iterator(); it.hasNext(); )
+        for ( Object no : files )
         {
-            Object no = it.next();
-
             if ( no != null )
             {
                 long fileModifTime;
@@ -326,8 +265,8 @@ public class TransformMojo
                     {
                         fileModifTime = ( oldest ? Long.MIN_VALUE : Long.MAX_VALUE );
                         getLog().warn( "Skipping URL '" + no
-                            + "' from up-to-date check due to error while opening connection: "
-                            + getAllExMsgs( ex, true ) );
+                                + "' from up-to-date check due to error while opening connection: "
+                                + getAllExMsgs( ex, true ) );
                     }
 
                 }
@@ -438,9 +377,9 @@ public class TransformMojo
         String name = pName;
         if ( pFileMappers != null )
         {
-            for ( int i = 0; i < pFileMappers.length; i++ )
+            for ( FileMapper pFileMapper : pFileMappers )
             {
-                name = pFileMappers[i].getMappedFileName( name );
+                name = pFileMapper.getMappedFileName( name );
             }
         }
         return getFile( targetDir, name );
@@ -489,19 +428,19 @@ public class TransformMojo
         int filesTransformed = 0;
         File inputDir = getDir( pTransformationSet.getDir() );
         File outputDir = getOutputDir( pTransformationSet.getOutputDir() );
-        for ( int i = 0; i < fileNames.length; i++ )
+        for ( String fileName : fileNames )
         {
             final Transformer t;
 
-            File input = getFile( inputDir, fileNames[i] );
-            File output = getOutputFile( outputDir, fileNames[i], pTransformationSet.getFileMappers() );
+            File input = getFile( inputDir, fileName );
+            File output = getOutputFile( outputDir, fileName, pTransformationSet.getFileMappers() );
 
             // Perform up-to-date-check.
             boolean needsTransform = forceCreation;
             if ( !needsTransform )
             {
-                List<File> dependsFiles = new ArrayList<File>();
-                List<File> producesFiles = new ArrayList<File>();
+                List<File> dependsFiles = new ArrayList<>();
+                List<File> producesFiles = new ArrayList<>();
 
                 // Depends from pom.xml file for when project configuration changes.
                 dependsFiles.add( getProject().getFile() );
@@ -509,16 +448,13 @@ public class TransformMojo
                 {
                     dependsFiles.add( new File( stylesheetUrl.getFile() ) );
                 }
-                List<File> catalogFiles = new ArrayList<File>();
-                List<URL> catalogUrls = new ArrayList<URL>();
+                List<File> catalogFiles = new ArrayList<>();
+                List<URL> catalogUrls = new ArrayList<>();
                 setCatalogs( catalogFiles, catalogUrls );
                 dependsFiles.addAll( catalogFiles );
                 dependsFiles.add( input );
                 File[] files = asFiles( getBasedir(), pTransformationSet.getOtherDepends() );
-                for ( int j = 0; j < files.length; j++ )
-                {
-                    dependsFiles.add( files[j] );
-                }
+                dependsFiles.addAll( Arrays.asList( files ) );
 
                 producesFiles.add( output );
 
@@ -527,7 +463,7 @@ public class TransformMojo
 
             if ( !needsTransform )
             {
-                getLog().debug( "Skipping XSL transformation.  File " + fileNames[i] + " is up-to-date." );
+                getLog().debug( "Skipping XSL transformation.  File " + fileName + " is up-to-date." );
             }
             else
             {
@@ -542,10 +478,9 @@ public class TransformMojo
                     NameValuePair[] parameters = pTransformationSet.getParameters();
                     if ( parameters != null )
                     {
-                        for ( int j = 0; j < parameters.length; j++ )
+                        for ( NameValuePair key : parameters )
                         {
-                            NameValuePair key = parameters[j];
-                            getLog().debug("Setting Parameter: " + key.getName() + "=" + key.getValue());
+                            getLog().debug( "Setting Parameter: " + key.getName() + "=" + key.getValue() );
                             t.setParameter( key.getName(), key.getValue() );
                         }
                     }
@@ -578,14 +513,14 @@ public class TransformMojo
         NameValuePair[] properties = pTransformationSet.getOutputProperties();
         if ( properties != null )
         {
-            for ( int i = 0; i < properties.length; i++ )
+            for ( NameValuePair property : properties )
             {
-                final String name = properties[i].getName();
+                final String name = property.getName();
                 if ( name == null || "".equals( name ) )
                 {
                     throw new MojoFailureException( "Missing or empty output property name" );
                 }
-                final String value = properties[i].getValue();
+                final String value = property.getValue();
                 if ( value == null )
                 {
                     throw new MojoFailureException( "Missing value for output property " + name );
@@ -597,7 +532,7 @@ public class TransformMojo
                 catch ( IllegalArgumentException e )
                 {
                     throw new MojoExecutionException( "Unsupported property name or value: " + name + " => " + value
-                        + e.getMessage(), e );
+                            + e.getMessage(), e );
                 }
             }
         }
@@ -625,9 +560,8 @@ public class TransformMojo
         try
         {
             Resolver resolver = getResolver();
-            for ( int i = 0; i < transformationSets.length; i++ )
+            for ( TransformationSet transformationSet : transformationSets )
             {
-                TransformationSet transformationSet = transformationSets[i];
                 resolver.setXincludeAware( transformationSet.isXincludeAware() );
                 resolver.setValidating( transformationSet.isValidating() );
                 transform( resolver, transformationSet );

@@ -151,20 +151,20 @@ public abstract class AbstractXmlMojo
             return;
         }
 
-        for ( int i = 0; i < catalogs.length; i++ )
+        for ( String catalog : catalogs )
         {
             try
             {
-                URL url = new URL( catalogs[i] );
+                URL url = new URL( catalog );
                 pCatalogUrls.add( url );
             }
             catch ( MalformedURLException e )
             {
-                File absoluteCatalog = asAbsoluteFile( new File( catalogs[i] ) );
+                File absoluteCatalog = asAbsoluteFile( new File( catalog ) );
                 if (!absoluteCatalog.exists() || !absoluteCatalog.isFile()){
-                    throw new MojoExecutionException("That catalog does not exist:"+absoluteCatalog.getPath(), e);
+                    throw new MojoExecutionException( "That catalog does not exist:" + absoluteCatalog.getPath(), e );
                 }
-                pCatalogFiles.add(absoluteCatalog  );
+                pCatalogFiles.add( absoluteCatalog );
             }
         }
     }
@@ -175,8 +175,8 @@ public abstract class AbstractXmlMojo
     protected Resolver getResolver()
         throws MojoExecutionException
     {
-        List<File> catalogFiles = new ArrayList<File>();
-        List<URL> catalogUrls = new ArrayList<URL>();
+        List<File> catalogFiles = new ArrayList<>();
+        List<URL> catalogUrls = new ArrayList<>();
         setCatalogs( catalogFiles, catalogUrls );
 
         return new Resolver( getBasedir(), catalogFiles, catalogUrls, getLocator(), catalogHandling,getLog().isDebugEnabled() );
@@ -300,7 +300,7 @@ public abstract class AbstractXmlMojo
             return null;
         }
 
-        final List<String> properties = new ArrayList<String>();
+        final List<String> properties = new ArrayList<>();
         final String protocol = proxy.getProtocol();
         final String prefix = isEmpty( protocol ) ? "" : ( protocol + "." );
 

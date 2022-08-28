@@ -28,7 +28,7 @@ import org.xml.sax.SAXParseException;
  * @author rlamont
  */
 public class ValidationErrorHandler implements ErrorHandler{
-    private final List<ErrorRecord> errors=new ArrayList<ErrorRecord>();
+    private final List<ErrorRecord> errors= new ArrayList<>();
     private final List<ErrorRecord> publicErrors = Collections.unmodifiableList(errors);
     private int warningCount=0;
     private int errorCount=0;
@@ -38,19 +38,19 @@ public class ValidationErrorHandler implements ErrorHandler{
     @Override
     public void warning(SAXParseException exception) throws SAXException {
         warningCount++;
-        errors.add(new ErrorRecord(ErrorType.WARNING, exception,context));
+        errors.add( new ErrorRecord( ErrorType.WARNING, exception, context ) );
     }
 
     @Override
     public void error(SAXParseException exception) throws SAXException {
         errorCount++;
-        errors.add(new ErrorRecord(ErrorType.ERROR, exception,context));
+        errors.add( new ErrorRecord( ErrorType.ERROR, exception, context ) );
     }
 
     @Override
     public void fatalError(SAXParseException exception) throws SAXException {
         fatalCount++;
-        errors.add(new ErrorRecord(ErrorType.FATAL, exception,context));
+        errors.add( new ErrorRecord( ErrorType.FATAL, exception, context ) );
     }
     
     public List<ErrorRecord> getErrors(){
@@ -97,7 +97,7 @@ public class ValidationErrorHandler implements ErrorHandler{
         }
     }
     
-    public class ErrorRecord{
+    public static class ErrorRecord{
         final ErrorType type;
         final SAXParseException exception;
         final File context;

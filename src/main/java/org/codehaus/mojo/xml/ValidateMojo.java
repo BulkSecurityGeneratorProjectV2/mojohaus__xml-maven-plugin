@@ -97,11 +97,7 @@ public class ValidateMojo
                 {
                     inputSource = pResolver.resolveEntity( publicId, systemId );
                 }
-                catch ( SAXException e )
-                {
-                    throw new MojoExecutionException( e.getMessage(), e );
-                }
-                catch ( IOException e )
+                catch ( SAXException | IOException e )
                 {
                     throw new MojoExecutionException( e.getMessage(), e );
                 }
@@ -209,11 +205,7 @@ public class ValidateMojo
             {
                 spf.setFeature( "http://apache.org/xml/features/validation/schema", true );
             }
-            catch ( SAXException e )
-            {
-                // Ignore this
-            }
-            catch ( ParserConfigurationException e )
+            catch ( SAXException | ParserConfigurationException e )
             {
                 // Ignore this
             }
@@ -224,11 +216,7 @@ public class ValidateMojo
             {
                 spf.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
             }
-            catch ( SAXException e )
-            {
-                // Ignore this
-            }
-            catch ( ParserConfigurationException e )
+            catch ( SAXException | ParserConfigurationException e )
             {
                 // Ignore this
             }
@@ -279,9 +267,9 @@ public class ValidateMojo
             getLog().info( "No matching files found for ValidationSet with public ID " + pValidationSet.getPublicId()
                 + ", system ID " + pValidationSet.getSystemId() + "." );
         }
-        for ( int i = 0; i < files.length; i++ )
+        for ( File file : files )
         {
-            validate( pResolver, pValidationSet, schema, files[i],errorHandler );
+            validate( pResolver, pValidationSet, schema, file, errorHandler );
         }
     }
 
@@ -311,12 +299,11 @@ public class ValidateMojo
         try
         {
             Resolver resolver = getResolver();
-            for ( int i = 0; i < validationSets.length; i++ )
+            for ( ValidationSet validationSet : validationSets )
             {
-                ValidationSet validationSet = validationSets[i];
-                resolver.setXincludeAware(validationSet.isValidating() );
+                resolver.setXincludeAware( validationSet.isValidating() );
                 resolver.setValidating( validationSet.isValidating() );
-                validate( resolver, validationSet ,errorHandler);
+                validate( resolver, validationSet, errorHandler );
             }
             List<ValidationErrorHandler.ErrorRecord> errorRecords=errorHandler.getErrors();
             if (!errorRecords.isEmpty()){
@@ -351,7 +338,7 @@ public class ValidateMojo
             }
             else
             {
-                final StringBuffer loc = new StringBuffer();
+                final StringBuilder loc = new StringBuilder();
                 String sep = "";
                 if ( publicId != null )
                 {

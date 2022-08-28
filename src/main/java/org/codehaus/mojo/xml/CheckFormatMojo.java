@@ -20,10 +20,10 @@ package org.codehaus.mojo.xml;
  */
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -59,17 +59,13 @@ public class CheckFormatMojo
         implements XmlFormatViolationHandler
     {
         private final Map<String, List<XmlFormatViolation>> violations =
-            new LinkedHashMap<String, List<XmlFormatViolation>>();
+                new LinkedHashMap<>();
 
         @Override
         public void handle( XmlFormatViolation violation )
         {
-            List<XmlFormatViolation> list = violations.get( violation.getFile().getAbsolutePath() );
-            if ( list == null )
-            {
-                list = new ArrayList<XmlFormatViolation>();
-                violations.put( violation.getFile().getAbsolutePath(), list );
-            }
+            List<XmlFormatViolation> list =
+                    violations.computeIfAbsent( violation.getFile().getAbsolutePath(), k -> new ArrayList<>() );
             list.add( violation );
             if ( failOnFormatViolation )
             {
@@ -113,7 +109,7 @@ public class CheckFormatMojo
      * File patterns to include. The patterns are relative to the current project's {@code baseDir}.
      */
     @Parameter
-    private List<FormatFileSet> formatFileSets = new ArrayList<FormatFileSet>();
+    private List<FormatFileSet> formatFileSets = new ArrayList<>();
 
     /**
      * The number of spaces expected for indentation. Note that {@code indentSize} can be configuread also per
@@ -158,7 +154,7 @@ public class CheckFormatMojo
         Reader in = null;
         try
         {
-            in = new InputStreamReader( new FileInputStream( file ), encoding );
+            in = new InputStreamReader( Files.newInputStream( file.toPath() ), encoding );
             SAXParser saxParser = saxParserFactory.newSAXParser();
             IndentCheckSaxHandler handler = new IndentCheckSaxHandler( file, indentSize, violationHandler );
             saxParser.parse( new InputSource( in ), handler );

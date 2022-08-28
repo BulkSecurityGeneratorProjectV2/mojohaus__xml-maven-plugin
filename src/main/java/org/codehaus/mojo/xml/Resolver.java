@@ -86,9 +86,9 @@ public class Resolver
             manager.setVerbosity( Integer.MAX_VALUE );
         }
         resolver = new CatalogResolver( manager );
-        for ( int i = 0; i < pFiles.size(); i++ )
+        for ( File pFile : pFiles )
         {
-            File file = (File) pFiles.get( i );
+            File file = pFile;
             try
             {
                 resolver.getCatalog().parseCatalog( file.getPath() );
@@ -96,12 +96,12 @@ public class Resolver
             catch ( IOException e )
             {
                 throw new MojoExecutionException( "Failed to parse catalog file: " + file.getPath() + ": "
-                    + e.getMessage(), e );
+                        + e.getMessage(), e );
             }
         }
-        for ( int i = 0; i < pUrls.size(); i++ )
+        for ( URL pUrl : pUrls )
         {
-            URL url = (URL) pUrls.get( i );
+            URL url = pUrl;
             try
             {
                 resolver.getCatalog().parseCatalog( url );
@@ -187,15 +187,7 @@ public class Resolver
             {
                 return asSaxSource( asInputSource( url ) );
             }
-            catch ( IOException e )
-            {
-                throw new TransformerException( e );
-            }
-            catch ( SAXException e )
-            {
-                throw new TransformerException( e );
-            }
-            catch ( ParserConfigurationException e )
+            catch ( IOException | ParserConfigurationException | SAXException e )
             {
                 throw new TransformerException( e );
             }
@@ -215,7 +207,7 @@ public class Resolver
         return new SAXSource( xmlReader, isource );
     }
 
-    private final LSInput newLSInput( InputSource pSource )
+    private LSInput newLSInput( InputSource pSource )
     {
         final LSInputImpl lsInput = new LSInputImpl();
         lsInput.setByteStream( pSource.getByteStream() );
@@ -363,11 +355,7 @@ public class Resolver
                 
             }
         }
-        catch ( URISyntaxException ex )
-        {
-            //ignore
-        }
-        catch ( IOException e )
+        catch ( URISyntaxException | IOException ex )
         {
             //ignore
         }
@@ -431,11 +419,7 @@ public class Resolver
         {
             return locator.getResource( url.toExternalForm()).getURL();
         }
-        catch ( ResourceNotFoundException e )
-        {
-            return null;
-        }
-        catch ( IOException e )
+        catch ( ResourceNotFoundException | IOException e )
         {
             return null;
         }

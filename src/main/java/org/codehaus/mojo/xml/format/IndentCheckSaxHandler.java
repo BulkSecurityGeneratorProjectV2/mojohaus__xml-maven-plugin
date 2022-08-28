@@ -108,7 +108,7 @@ public class IndentCheckSaxHandler
 
     /** The element stack */
     private Deque<IndentCheckSaxHandler.ElementEntry> stack =
-        new java.util.ArrayDeque<IndentCheckSaxHandler.ElementEntry>();
+            new java.util.ArrayDeque<>();
 
     /** The {@link XmlFormatViolationHandler} for reporting found violations */
     private final XmlFormatViolationHandler violationHandler;

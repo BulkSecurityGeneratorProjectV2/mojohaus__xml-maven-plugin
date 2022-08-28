@@ -16,19 +16,20 @@
 package org.codehaus.mojo.xml.test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -142,8 +143,8 @@ public class TransformMojoTest
     private String read( File file )
         throws IOException
     {
-        final StringBuffer sb = new StringBuffer();
-        final Reader reader = new InputStreamReader( new FileInputStream( file ), "UTF-8" );
+        final StringBuilder sb = new StringBuilder();
+        final Reader reader = new InputStreamReader( Files.newInputStream( file.toPath() ), StandardCharsets.UTF_8 );
         final char[] buffer = new char[4096];
         for ( ;; )
         {
@@ -186,14 +187,14 @@ public class TransformMojoTest
     }
 
     private String eval( Node contextNode, String str )
-        throws TransformerException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+        throws TransformerException
     {
         final String xsl = "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n"
             + "<xsl:template match='*'>\n" + "<xsl:value-of select='" + str + "'/>\n" + "</xsl:template>\n"
             + "</xsl:stylesheet>\n";
         final StringWriter sw = new StringWriter();
         final Transformer t =
-            TransformMojo.newTransformerFactory( org.apache.xalan.processor.TransformerFactoryImpl.class.getName(),
+                TransformerFactory.newInstance( org.apache.xalan.processor.TransformerFactoryImpl.class.getName(),
                                                  getClass().getClassLoader() ).newTransformer( new StreamSource( new StringReader( xsl ) ) );
         t.setOutputProperty( OutputKeys.OMIT_XML_DECLARATION, "yes" );
         t.transform( new DOMSource( contextNode ), new StreamResult( sw ) );
@@ -207,11 +208,6 @@ public class TransformMojoTest
     public void testIt8()
         throws Exception
     {
-        if ( !java1_6_Aware() )
-        {
-            System.out.println( " skip test due to non compliance jvm version need 1.6" );
-            return;
-        }
         final String dir = "src/test/it8";
         runTest( dir );
         Document doc1 = parse( new File( dir, "target/generated-resources/xml/xslt/doc1.xml" ) );
