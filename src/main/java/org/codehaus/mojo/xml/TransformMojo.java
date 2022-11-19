@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -385,7 +386,7 @@ public class TransformMojo
             File tmpOutput = null;
             if ( transformInPlace )
             {
-                tmpOutput = File.createTempFile( "xml-maven-plugin", "xml" );
+                tmpOutput = Files.createTempFile( "xml-maven-plugin", "xml" ).toFile();
                 tmpOutput.deleteOnExit();
                 fos = new FileOutputStream( tmpOutput );
             }
